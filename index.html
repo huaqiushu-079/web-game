@@ -519,7 +519,8 @@
             firstPhaseQuestions: 6,
             noThreshold: 4, // 超过此数显示提示选项
             apiKey: 'sk-gPKiVohGj9H-73nVuNr57Q',
-            apiEndpoint: 'https://models.sjtu.edu.cn/api/v1'
+            apiEndpoint: 'https://models.sjtu.edu.cn/api/v1/chat/completions',
+            modelName: 'deepseek-chat'
         };
 
         // 汤底（正确答案）
@@ -580,7 +581,7 @@
                         'Authorization': `Bearer ${CONFIG.apiKey}`
                     },
                     body: JSON.stringify({
-                        model: 'gpt-3.5-turbo',
+                        model: CONFIG.modelName,
                         messages: [
                             {
                                 role: 'system',
@@ -823,7 +824,7 @@
                         'Authorization': `Bearer ${CONFIG.apiKey}`
                     },
                     body: JSON.stringify({
-                        model: 'gpt-3.5-turbo',
+                        model: CONFIG.modelName,
                         messages: [
                             {
                                 role: 'system',
