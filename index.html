@@ -399,6 +399,18 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* 烟花爆炸动画 */
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(calc(var(--vx) * 50px), calc(var(--vy) * 50px + 100px)) scale(0);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -598,7 +610,12 @@
 - 不要将正常的恐惧、焦虑情绪误解为精神疾病。
 - 严格区分"独居"（名义上独自居住）和"实际有人藏匿"（事实上的共同生活）。
 - 男人发现家中物品移位是因为有人藏在家中，不是自己记错或幻觉。
-- 陌生人像寄生虫一样与男人共同生活，这是整个故事的核心。`
+- 陌生人像寄生虫一样与男人共同生活，这是整个故事的核心。
+- 故事中没有任何超自然元素，所有现象都有合理解释。
+- 故事中没有人死去，也没有发生谋杀或死亡事件。
+- 所有角色都是人类，没有鬼魂、幽灵、妖怪、外星人等非人类存在。
+- 男人不认识藏在家中的陌生人，他们之间没有任何关系。
+- 藏在家中的陌生人不是男人的追求者、爱慕者或粉丝，纯粹是一个闯入者。`
                             },
                             {
                                 role: 'user',
@@ -662,7 +679,26 @@
                 '做梦', '幻觉', '精神问题', '梦游', '精神病', '心理疾病', '精神疾病',
                 '自杀', '他杀', '意外', '事故',
                 '家人', '亲戚', '朋友', '室友', '合租', '同居',
-                '自己弄的', '记错', '记错了', '误会', '搞错'
+                '自己弄的', '记错', '记错了', '误会', '搞错',
+                // 超自然元素
+                '鬼', '妖怪', '幽灵', '灵魂', '魂魄', '阴间', '天堂', '地狱',
+                '外星人', '外星', 'UFO', '不明飞行物',
+                '魔法', '法术', '诅咒', '附身', '通灵', '超能力',
+                '僵尸', '吸血鬼', '狼人', '恶魔', '天使', '神仙',
+                // 死亡相关
+                '死', '死亡', '去世', '遇害', '命案', '尸体', '死尸',
+                '杀', '杀害', '杀死', '谋杀', '凶杀',
+                // 非人类角色
+                '动物', '宠物', '狗', '猫', '鸟', '虫', '寄生虫',
+                '机器人', 'AI', '人工智能', '克隆人',
+                '神', '上帝', '佛祖', '菩萨',
+                // 关系相关（否定）
+                '认识', '认识的', '朋友', '熟人', '认识的人',
+                '追求者', '爱慕者', '粉丝', '崇拜者', '仰慕者',
+                '暗恋', '喜欢', '爱', '追求', '追求他',
+                '女朋友', '男朋友', '恋人', '爱人', '情人',
+                '前妻', '前夫', '前任', '前女友', '前男友',
+                '同事', '同学', '老师', '学生', '上司', '下属'
             ];
             
             // 无关关键词（更精确的匹配）
@@ -710,6 +746,69 @@
             return '无关';
         }
 
+        // 烟花庆祝效果
+        function createFireworks() {
+            const fireworksContainer = document.createElement('div');
+            fireworksContainer.id = 'fireworks-container';
+            fireworksContainer.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 9999;
+                overflow: hidden;
+            `;
+            document.body.appendChild(fireworksContainer);
+
+            // 创建多个烟花
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => {
+                    createSingleFirework(fireworksContainer);
+                }, i * 200);
+            }
+
+            // 3秒后移除烟花容器
+            setTimeout(() => {
+                fireworksContainer.remove();
+            }, 5000);
+        }
+
+        // 创建单个烟花
+        function createSingleFirework(container) {
+            const colors = ['#ff0000', '#ff6b00', '#ffd700', '#00ff00', '#00bfff', '#ff00ff', '#ffffff'];
+            const particles = 30;
+            const centerX = Math.random() * window.innerWidth;
+            const centerY = Math.random() * window.innerHeight * 0.6;
+
+            for (let i = 0; i < particles; i++) {
+                const particle = document.createElement('div');
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const angle = (Math.PI * 2 * i) / particles + Math.random() * 0.3;
+                const velocity = 3 + Math.random() * 5;
+                const size = 4 + Math.random() * 6;
+
+                particle.style.cssText = `
+                    position: absolute;
+                    left: ${centerX}px;
+                    top: ${centerY}px;
+                    width: ${size}px;
+                    height: ${size}px;
+                    background: ${color};
+                    border-radius: 50%;
+                    opacity: 1;
+                    box-shadow: 0 0 ${size * 2}px ${color};
+                    animation: explode 1s ease-out forwards;
+                `;
+
+                particle.style.setProperty('--vx', Math.cos(angle) * velocity);
+                particle.style.setProperty('--vy', Math.sin(angle) * velocity);
+
+                container.appendChild(particle);
+            }
+        }
+
         // 使用AI判断答案是否正确
         async function checkAnswer(userAnswer) {
             if (!CONFIG.apiKey) {
@@ -728,16 +827,28 @@
                         messages: [
                             {
                                 role: 'system',
-                                content: `你是一个海龟汤游戏的裁判。
+                                content: `你是一个海龟汤游戏的裁判，需要判断玩家的答案是否正确。
 
 汤底（正确答案）：${SOUP_ANSWER}
 
-规则：
-1. 玩家会提交一个答案
-2. 你需要判断玩家的答案是否与汤底大意相同
-3. 如果核心情节一致，回答"正确"
-4. 如果相差较大，回答"错误"
-5. 只回答"正确"或"错误"，不要有其他内容`
+核心要点：
+1. 男人独自居住
+2. 发现家中物品莫名移位（拖鞋、花瓶等）
+3. 出门前特意留意细节
+4. 回家后发现物品位置改变
+5. 意识到有陌生人藏在家里
+6. 像寄生虫一样共同生活
+7. 感到恐惧并逃离
+
+宽松判断规则：
+1. 玩家答案不需要与汤底完全一致，只要核心情节和含义大致相同即可
+2. 只要提到以下任意2个及以上核心要点，即可判定为正确：
+   - 家里有陌生人/藏着人
+   - 物品移位/变动
+   - 男人发现异常后逃离
+   - 陌生人像寄生虫一样生活
+3. 如果玩家答案与汤底完全无关或完全错误，回答"错误"
+4. 只回答"正确"或"错误"，不要有其他内容`
                             },
                             {
                                 role: 'user',
@@ -767,11 +878,13 @@
         function checkAnswerByKeywords(userAnswer) {
             const lowerAnswer = userAnswer.toLowerCase();
 
+            // 核心关键词组（宽松匹配）
             const keyElements = [
-                { words: ['拖鞋', '鞋尖', '鞋子', '鞋'] },
-                { words: ['花瓶', '花朵', '花'] },
-                { words: ['陌生人', '藏', '躲', '共同生活', '寄生虫'] },
-                { words: ['移位', '朝向', '变动', '改变', '不一样'] }
+                { words: ['拖鞋', '鞋尖', '鞋子', '鞋', '玄关'] },
+                { words: ['花瓶', '花朵', '花', '摆放', '朝向'] },
+                { words: ['陌生人', '藏', '躲', '共同生活', '寄生虫', '闯入', '住人', '有人', '其他人'] },
+                { words: ['移位', '变动', '改变', '不一样', '移动', '调换', '变化'] },
+                { words: ['恐惧', '害怕', '惊恐', '逃离', '逃跑', '冲出', '不敢停留'] }
             ];
 
             let matchedElements = 0;
@@ -783,7 +896,8 @@
                 }
             });
 
-            return matchedElements >= 3;
+            // 宽松判定：匹配2个及以上核心元素即可
+            return matchedElements >= 2;
         }
 
         // 处理问题提交
@@ -924,6 +1038,11 @@
 
             // 判断答案
             const isWin = await checkAnswer(userAnswer);
+
+            // 如果答对了，显示烟花庆祝
+            if (isWin) {
+                createFireworks();
+            }
 
             // 显示结果
             document.getElementById('resultTitle').textContent = isWin ? '🎉 恭喜，猜对啦！' : '😢 很抱歉，没有猜对哦';
