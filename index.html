@@ -631,14 +631,59 @@
                 const data = await response.json();
                 const answer = data.choices[0].message.content.trim();
 
-                // 验证回答
+                // 验证回答 - 优先使用LLM，只有格式不正确时才重试
                 if (['是', '不是', '无关'].includes(answer)) {
                     return answer;
                 } else {
-                    return getKeywordAnswer(question);
+                    console.warn('LLM回答格式不正确，重新调用...');
+                    // 重新调用LLM，增加提示让它输出正确格式
+                    return await getAIAnswerWithRetry(question);
                 }
             } catch (error) {
                 console.error('AI API调用失败:', error);
+                // 只有API完全失败时才使用关键词匹配
+                return getKeywordAnswer(question);
+            }
+        }
+
+        // LLM重试函数
+        async function getAIAnswerWithRetry(question) {
+            try {
+                const response = await fetch(CONFIG.apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: CONFIG.modelName,
+                        messages: [
+                            {
+                                role: 'system',
+                                content: '你必须严格按照格式回答！只能回复"是"、"不是"或"无关"中的一个词，不要有任何其他文字。'
+                            },
+                            {
+                                role: 'user',
+                                content: question
+                            }
+                        ],
+                        temperature: 0,
+                        max_tokens: 5
+                    })
+                });
+
+                const data = await response.json();
+                const answer = data.choices[0].message.content.trim();
+
+                // 如果重试后仍然格式不正确，使用关键词匹配
+                if (['是', '不是', '无关'].includes(answer)) {
+                    return answer;
+                } else {
+                    console.warn('LLM重试后格式仍不正确，使用关键词匹配');
+                    return getKeywordAnswer(question);
+                }
+            } catch (error) {
+                console.error('AI API重试失败:', error);
                 return getKeywordAnswer(question);
             }
         }
@@ -867,10 +912,55 @@
                 if (['正确', '错误'].includes(result)) {
                     return result === '正确';
                 } else {
-                    return checkAnswerByKeywords(userAnswer);
+                    console.warn('LLM回答格式不正确，重新调用...');
+                    // 重新调用LLM，增加提示让它输出正确格式
+                    return await checkAnswerWithRetry(userAnswer);
                 }
             } catch (error) {
                 console.error('AI判断失败:', error);
+                // 只有API完全失败时才使用关键词匹配
+                return checkAnswerByKeywords(userAnswer);
+            }
+        }
+
+        // 答案判定重试函数
+        async function checkAnswerWithRetry(userAnswer) {
+            try {
+                const response = await fetch(CONFIG.apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: CONFIG.modelName,
+                        messages: [
+                            {
+                                role: 'system',
+                                content: '你必须严格按照格式回答！只能回复"正确"或"错误"中的一个词，不要有任何其他文字。'
+                            },
+                            {
+                                role: 'user',
+                                content: userAnswer
+                            }
+                        ],
+                        temperature: 0,
+                        max_tokens: 5
+                    })
+                });
+
+                const data = await response.json();
+                const result = data.choices[0].message.content.trim();
+
+                // 如果重试后仍然格式不正确，使用关键词匹配
+                if (['正确', '错误'].includes(result)) {
+                    return result === '正确';
+                } else {
+                    console.warn('LLM重试后格式仍不正确，使用关键词匹配');
+                    return checkAnswerByKeywords(userAnswer);
+                }
+            } catch (error) {
+                console.error('AI判断重试失败:', error);
                 return checkAnswerByKeywords(userAnswer);
             }
         }
