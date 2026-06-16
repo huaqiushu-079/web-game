@@ -439,8 +439,8 @@
                     <div class="value" id="remainingQuestions">6</div>
                 </div>
                 <div class="status-item">
-                    <div class="label">"否"的次数</div>
-                    <div class="value" id="noCount">0</div>
+                    <div class="label">"是"的次数</div>
+                    <div class="value" id="yesCount">0</div>
                 </div>
             </div>
             
@@ -541,7 +541,7 @@
         const answerText = document.getElementById('answerText');
         const questionHistory = document.getElementById('questionHistory');
         const remainingQuestionsEl = document.getElementById('remainingQuestions');
-        const noCountEl = document.getElementById('noCount');
+        const yesCountEl = document.getElementById('yesCount');
         const hintModal = document.getElementById('hintModal');
         const storyInput = document.getElementById('storyInput');
 
@@ -626,42 +626,72 @@
                 lowerQuestion.includes(obj.toLowerCase())
             );
 
-            // 肯定关键词
-            const yesKeywords = ['拖鞋', '花瓶', '移位', '闯入', '陌生人', '藏', '躲', '共同生活', '寄生虫', '改变', '不一样'];
+            // 肯定关键词（扩展版）
+            const yesKeywords = [
+                '拖鞋', '花瓶', '移位', '闯入', '陌生人', '藏', '躲', '共同生活', '寄生虫', '改变', '不一样',
+                '鞋', '鞋子', '鞋尖', '朝向', '摆放', '位置', '变动', '移动', '调换', '换',
+                '家中', '家里', '屋内', '房间', '玄关', '门', '灯', '亮灯', '开灯',
+                '观察', '留意', '注意', '看到', '发现', '察觉', '疑心', '怀疑',
+                '独自', '独居', '一个人', '单身',
+                '惊恐', '害怕', '恐惧', '逃跑', '逃离', '跑',
+                '焦虑', '不安', '紧张', '担心',
+                '物品', '东西', '物件', '家具',
+                '早上', '早晨', '白天', '晚上', '傍晚', '夜里',
+                '上班', '工作', '下班', '回家', '出门', '离开',
+                '七点', '7点', '时间',
+                '酒店', '住酒店', '住宿'
+            ];
+            
             // 否定关键词
-            const noKeywords = ['小偷', '盗窃', '抢劫', '谋杀', '鬼魂', '幽灵', '闹鬼', '做梦', '幻觉', '精神问题', '梦游'];
-            // 无关关键词
-            const neutralKeywords = ['名字', '年龄', '职业', '工作', '公司', '收入', '长相', '身高', '体重', '爱好', '朋友', '家人'];
+            const noKeywords = [
+                '小偷', '盗窃', '抢劫', '谋杀', '鬼魂', '幽灵', '闹鬼', 
+                '做梦', '幻觉', '精神问题', '梦游', '精神病', '心理疾病',
+                '自杀', '他杀', '意外', '事故',
+                '家人', '亲戚', '朋友', '室友', '合租', '同居'
+            ];
+            
+            // 无关关键词（更精确的匹配）
+            const neutralKeywords = [
+                '名字', '姓名', '年龄', '岁', '职业', '工作单位', '公司名称', 
+                '收入', '工资', '薪水', '长相', '身高', '体重', 
+                '爱好', '兴趣', '血型', '星座', '生肖'
+            ];
 
-            // 检查肯定
-            for (const word of yesKeywords) {
-                if (lowerQuestion.includes(word)) {
-                    return '是';
-                }
-            }
-
-            // 检查否定
+            // 优先检查否定关键词（避免误判）
             for (const word of noKeywords) {
                 if (lowerQuestion.includes(word)) {
                     return '不是';
                 }
             }
 
-            // 检查无关
+            // 检查肯定关键词
+            for (const word of yesKeywords) {
+                if (lowerQuestion.includes(word)) {
+                    return '是';
+                }
+            }
+
+            // 检查无关关键词（更严格的匹配）
             for (const word of neutralKeywords) {
                 if (lowerQuestion.includes(word)) {
                     return '无关';
                 }
             }
 
-            // 默认根据问题类型判断
-            if (hasVideoObject) {
+            // 智能判断：如果问题包含疑问词且涉及视频物品，尝试判断
+            const questionWords = ['什么', '怎么', '为什么', '哪里', '谁', '哪个', '怎样'];
+            const hasQuestionWord = questionWords.some(word => lowerQuestion.includes(word));
+            
+            if (hasQuestionWord && hasVideoObject) {
+                // 如果问的是物品状态变化，返回"是"
                 if (lowerQuestion.includes('变') || lowerQuestion.includes('动') || 
-                    lowerQuestion.includes('移') || lowerQuestion.includes('改')) {
+                    lowerQuestion.includes('移') || lowerQuestion.includes('改') ||
+                    lowerQuestion.includes('不一样') || lowerQuestion.includes('不同')) {
                     return '是';
                 }
             }
 
+            // 默认返回"无关"而不是直接拒绝
             return '无关';
         }
 
